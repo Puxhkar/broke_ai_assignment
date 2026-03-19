@@ -15,13 +15,11 @@ function getExa() {
   return _exa;
 }
 
+
 export const exaSearchTool = tool(
   async ({
     query,
     type = "auto",
-    category,
-    includeDomains,
-    excludeDomains,
     numResults = 5,
   }) => {
     try {
@@ -29,7 +27,6 @@ export const exaSearchTool = tool(
 
       const result = await exa.search(query, {
         type: type as "auto" | "fast" | "deep" | "deep-reasoning",
-        category: category,
 
         numResults: Math.min(numResults, 5), // Reduced from 8 to 5
 
@@ -38,9 +35,6 @@ export const exaSearchTool = tool(
           text: { maxCharacters: 500 }, // Reduced from 1000 to 500
           maxAgeHours: 72,
         },
-
-        includeDomains,
-        excludeDomains,
       });
 
       const cleanedResults = result.results.map((r) => ({
@@ -52,7 +46,8 @@ export const exaSearchTool = tool(
 
 
       return JSON.stringify(cleanedResults, null, 2);
-    } catch (e: unknown) {
+    } 
+    catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e);
 
       return JSON.stringify({
@@ -83,13 +78,6 @@ export const exaSearchTool = tool(
         .enum(["auto", "fast", "deep", "deep-reasoning"])
         .optional()
         .default("auto"),
-
-      category: z
-        .enum(["company", "people", "news", "research paper"])
-        .optional(),
-
-      includeDomains: z.array(z.string()).optional(),
-      excludeDomains: z.array(z.string()).optional(),
 
       numResults: z.number().optional().default(10),
     }),
