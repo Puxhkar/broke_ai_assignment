@@ -1,6 +1,6 @@
 import { exaSearchTool } from "./tools/exa";
 import { LeadState } from "./state";
-import { z } from "zod";
+import { z } from "zod"; 
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { createAgent } from "langchain";
 import { retryWithWait } from "../lib/retry";
@@ -27,20 +27,20 @@ export async function contactFinderNode(state: typeof LeadState.State) {
   }
 
   const contactSystemPrompt = `You are an expert contact researcher.
-Your goal is to find valid contact details for "${companyName}" in "${targetLocation}".
+            Your goal is to find valid contact details for "${companyName}" in "${targetLocation}".
 
-STRATEGY:
-1. CHECK WEBSITE: If a website is provided (${officialSite}), check its contact page, footer, and header.
-2. CHECK DIRECTORIES: Search Indian business directories like Justdial, Indiamart, Vykart, and Facebook for verified phone numbers and emails. This is CRITICAL if the official website is missing or broken.
-3. VERIFY: Ensure the contact details belong to "${companyName}".
+            STRATEGY:
+            1. CHECK WEBSITE: If a website is provided (${officialSite}), check its contact page, footer, and header.
+            2. CHECK DIRECTORIES: Search Indian business directories like Justdial, Indiamart, Vykart, and Facebook for verified phone numbers and emails. This is CRITICAL if the official website is missing or broken.
+            3. VERIFY: Ensure the contact details belong to "${companyName}".
 
-CRITICAL:
-- Look for Phone numbers (starting with +91 if in India).
-- Look for Emails (official company emails).
-- Look for WhatsApp buttons or mentions.
-- If you find an "Nginx" or "Fedora" related source, IGNORE it as it is likely a generic hosting page.
+            CRITICAL:
+            - Look for Phone numbers (starting with +91 if in India).
+            - Look for Emails (official company emails).
+            - Look for WhatsApp buttons or mentions.
+            - If you find an "Nginx" or "Fedora" related source, IGNORE it as it is likely a generic hosting page.
 
-DO NOT return generic placeholders. If info is missing, say "Not found".`;
+            DO NOT return generic placeholders. If info is missing, say "Not found".`;
 
   const agent = createAgent({
     model: llm,
