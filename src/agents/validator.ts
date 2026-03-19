@@ -10,13 +10,11 @@ export async function validatorNode(state: typeof LeadState.State) {
     const hasDescription = businessProfile.description && 
                            !businessProfile.description.toLowerCase().includes("not found") && 
                            businessProfile.description.length > 30;
-
     // Critical check: Do we have ANYTHING useful?
     if (!hasWebsite && !hasDescription) {
         logs.push("[Validator] ❌ No valid website or description found.");
         isValid = false;
     }
-
     if (hasDescription && (
         businessProfile.description.toLowerCase().includes("nginx") || 
         businessProfile.description.toLowerCase().includes("fedora") ||
@@ -25,7 +23,6 @@ export async function validatorNode(state: typeof LeadState.State) {
         logs.push("[Validator] ❌ Placeholder content detected in description.");
         isValid = false;
     }
-
     if (isValid) {
         logs.push("[Validator] ✅ Research data validated successfully.");
         return { logs };
