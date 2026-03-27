@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { leadProcessorApp } from "../../../agents/index";
+import { LeadState } from "../../../agents/state";
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
     const finalState = await leadProcessorApp.invoke({
       companyName,
       location,
-    });
+    }) as typeof LeadState.State;
 
     return NextResponse.json({
       businessProfile: finalState.businessProfile,

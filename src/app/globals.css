@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer utilities {
+  .bg-dot-white\/\[0\.2\] {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .bg-dot-thick-neutral-300 {
+    background-image: radial-gradient(rgba(212, 212, 212, 0.3) 2px, transparent 2px);
+    background-size: 32px 32px;
+  }
+  .bg-dot-thick-neutral-800 {
+    background-image: radial-gradient(rgba(38, 38, 38, 0.3) 2px, transparent 2px);
+    background-size: 32px 32px;
+  }
+  .bg-dot-thick-indigo-500 {
+    background-image: radial-gradient(rgba(99, 102, 241, 0.4) 2px, transparent 2px);
+    background-size: 32px 32px;
+  }
+}
