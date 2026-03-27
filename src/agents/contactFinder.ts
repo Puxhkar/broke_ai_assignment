@@ -20,20 +20,20 @@ const contactCardSchema = z.object({
 const contactAgent = createAgent({
   model: llm,
   tools: [exaSearchTool],
-  systemPrompt: `You are an expert contact researcher specialized in finding B2B and direct contact info.
-                  Your task is to locate valid contact details for the provided business profile.
+  systemPrompt: `You are an expert contact researcher.
+Your task is to locate valid contact details for the provided business.
 
-                  Search strategies:
-                  1. Examine the 'Contact' or 'About' page of the main website.
-                  2. Search public directories like IndiaMART, Justdial, Yelp, or LinkedIn public company pages.
-                  3. Look for Google Business Profile snippets or other marketplace listings.
+                  PRO TIPS FOR ACCURACY:
+                  1. Use type: "auto" for quick lookups or type: "deep" for hard-to-find contacts.
+                  2. Targeted Search: Search for "[Company] contact information", "[Company] customer support phone", or "[Company] sales email".
+                  3. Check Directories: Search for the company on LinkedIn, IndiaMART, Justdial, Yelp, or ZoomInfo.
 
                   Prioritize finding:
                   - Direct Phone Number
                   - Professional Email
                   - WhatsApp contact (especially common for Indian SMBs)
 
-                  Provide your findings in a clear text summary and explicitly include the Source URL where the data was verified.`,
+Provide your findings in a clear text summary and explicitly include the Source URL.`,
 });
 
 export async function contactFinderNode(state: typeof LeadState.State) {
@@ -42,7 +42,7 @@ export async function contactFinderNode(state: typeof LeadState.State) {
   const result = await contactAgent.invoke({
     messages: [{
       role: "user",
-      content: `Please find contact info for this business: ${JSON.stringify(businessProfile)}`
+      content: `Find contact info and direct links for this business: ${JSON.stringify(businessProfile)}`
     }]
   });
 
@@ -51,7 +51,7 @@ export async function contactFinderNode(state: typeof LeadState.State) {
   const structuredLlm = llm.withStructuredOutput(contactCardSchema);
 
   const finalStructured = await structuredLlm.invoke([
-    new SystemMessage("Extract the contact card from the research data. Ensure 'sourceUrl' is populated with the best link found. For missing fields, use empty strings."),
+    new SystemMessage("Extract the contact card from the research data. Ensure 'sourceUrl' is the most relevant contact or company page. For missing fields, use empty strings."),
     { role: "user", content: finalAgentMessage }
   ]);
 

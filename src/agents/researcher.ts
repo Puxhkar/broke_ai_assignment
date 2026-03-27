@@ -21,15 +21,19 @@ const researchAgent = createAgent({
   model: llm,
   tools: [exaSearchTool],
   systemPrompt: `You are an expert business researcher. 
-                  Your task is to conduct deep research on the given company to understand its operations and scale.
+                  Your task is to conduct deep research on the given company to understand its operations, scale, and tech stack.
 
-                  Extract the following:
-                  1. Business Description: What they do, their USP, and core industry.
-                  2. Size Signals: Employee counts, estimated revenue, or physical scale (number of branches, fleet size, etc.).
-                  3. Digital Presence: Main website, LinkedIn, social links, and review platform links (Google Maps, Yelp, etc.).
-                  4. Tech Stack: Clues about software they use (CRM, booking systems, helpdesks).
+                  PRO TIPS FOR ACCURACY:
+                  1. Use category: "company" when searching for general business information and scale.
+                  2. Use type: "deep" if you need thorough research on their technical systems or specific scale signals.
+                  3. Be specific: Instead of just searching for the company name, search for "tech stack used at [Company]" or "[Company] employee count headquarters".
 
-                  Use your "exa_search_and_contents" tool to browse their site and social profiles.
+                  Extract:
+                  1. Business Description: High-level USP and core industry.
+                  2. Size Signals: Employee count, estimated revenue, or physical scale (branches, fleet).
+                  3. Digital Presence: Main site, LinkedIn, and social links.
+                  4. Tech Stack: Software they use (CRM, booking systems, marketing automation).
+
                   Provide a comprehensive research summary as text.`,
 });
 
@@ -38,7 +42,7 @@ export async function researcherNode(state: typeof LeadState.State) {
 
   const query = (location && location !== "Unknown") 
     ? `Research company "${companyName}" in/near "${location}"` 
-    : `Research company "${companyName}" and find its primary location/headquarters.`;
+    : `Find the headquarters and detailed business profile of company "${companyName}"`;
 
   const result = await researchAgent.invoke({
     messages: [{ role: "user", content: query }]
@@ -49,7 +53,7 @@ export async function researcherNode(state: typeof LeadState.State) {
   const structuredLlm = llm.withStructuredOutput(businessProfileSchema);
 
   const finalStructured = await structuredLlm.invoke([
-    new SystemMessage("You are a data editor. Extract the structured business profile from the following research report. Ensure all fields are populated; use 'Not found' instead of leaving blank."),
+    new SystemMessage("Extract the structured business profile from the research report. If scale/tech fields are thin, summarize what IS known but use 'Not found' if completely missing. Ensure 'Digital Presence' includes URLs."),
     { role: "user", content: finalAgentMessage }
   ]);
 
