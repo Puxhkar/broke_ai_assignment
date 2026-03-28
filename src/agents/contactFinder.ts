@@ -1,9 +1,8 @@
 import { ChatGoogle } from "@langchain/google";
 import { exaSearchTool } from "./tools/exa";
 import { LeadState } from "./state";
-import { createAgent } from "langchain";
 import { z } from "zod";
-import { SystemMessage } from "@langchain/core/messages";
+import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 
 const llm = new ChatGoogle({
   model: "gemini-2.5-flash",
@@ -20,12 +19,8 @@ const contactCardSchema = z.object({
   sourceUrl: z.string().default("N/A"),
 });
 
-const contactAgent = createAgent({
-  model: llm,
-  tools: [exaSearchTool],
-  systemPrompt: `Expert contact researcher. 
-Find Phone, Email, and WhatsApp. For each, identify a clear source label (e.g. "Found via company website", "Found via Justdial").`,
-});
+const contactSystemPrompt = `Expert contact researcher. 
+Find Phone, Email, and WhatsApp. For each, identify a clear source label (e.g. "Found via company website", "Found via Justdial").`;
 
 export async function contactFinderNode(state: typeof LeadState.State) {
   const { companyName, discoveredLocation, location } = state;
@@ -33,14 +28,15 @@ export async function contactFinderNode(state: typeof LeadState.State) {
 
   const initialLogs = [`[ContactFinder] Locating contact data for "${companyName}" in "${targetLocation}"...`];
 
-  const result = await contactAgent.invoke({
-    messages: [{
-      role: "user",
-      content: `Find contact info and specific source reasons for "${companyName}" in "${targetLocation}".`
-    }]
-  });
+  const query = `Find contact info and specific source reasons for "${companyName}" in "${targetLocation}".`;
 
-  const finalAgentMessage = result.messages[result.messages.length - 1].content as string;
+  const modelWithTools = llm.bindTools([exaSearchTool]);
+  const result = await modelWithTools.invoke([
+    new SystemMessage(contactSystemPrompt),
+    new HumanMessage(query)
+  ]);
+
+  const finalAgentMessage = result.content as string;
   const structuredLlm = llm.withStructuredOutput(contactCardSchema);
 
   const finalStructured = await structuredLlm.invoke([
@@ -55,6 +51,6 @@ export async function contactFinderNode(state: typeof LeadState.State) {
   return {
     contactCard: finalStructured,
     logs: [...initialLogs, ...outputLogs],
-    messages: result.messages,
+    messages: [new HumanMessage(query), result],
   };
 }

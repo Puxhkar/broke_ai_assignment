@@ -1,9 +1,8 @@
 import { ChatGoogle } from "@langchain/google";
 import { exaSearchTool } from "./tools/exa";
 import { LeadState } from "./state";
-import { createAgent } from "langchain";
 import { z } from "zod";
-import { SystemMessage } from "@langchain/core/messages";
+import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 
 const llm = new ChatGoogle({
   model: "gemini-2.5-flash",
@@ -18,16 +17,12 @@ const businessProfileSchema = z.object({
   refinedLocation: z.string().optional(),
 });
 
-const researchAgent = createAgent({
-  model: llm,
-  tools: [exaSearchTool],
-  systemPrompt: `You are an expert business researcher. 
+const researchSystemPrompt = `You are an expert business researcher. 
 Conduct deep research to extract structured data about a company.
 
 CRITICAL:
 1. TECH STACK: Prefix with "Confirmed:" or "Inferred from public sources:".
-2. HQ: If location is "Unknown", find the global headquarters first.`,
-});
+2. HQ: If location is "Unknown", find the global headquarters first.`;
 
 export async function researcherNode(state: typeof LeadState.State) {
   const { companyName, location } = state;
@@ -39,11 +34,13 @@ export async function researcherNode(state: typeof LeadState.State) {
 
   const query = `Research company "${companyName}" ${location !== "Unknown" ? `in ${location}` : ""}. Find summary, scale, tech stack, and HQ.`;
 
-  const result = await researchAgent.invoke({
-    messages: [{ role: "user", content: query }]
-  });
+  const modelWithTools = llm.bindTools([exaSearchTool]);
+  const result = await modelWithTools.invoke([
+    new SystemMessage(researchSystemPrompt),
+    new HumanMessage(query)
+  ]);
 
-  const finalAgentMessage = result.messages[result.messages.length - 1].content as string;
+  const finalAgentMessage = result.content as string;
   const structuredLlm = llm.withStructuredOutput(businessProfileSchema);
 
   const finalStructured = await structuredLlm.invoke([
@@ -62,6 +59,6 @@ export async function researcherNode(state: typeof LeadState.State) {
     businessProfile: finalStructured,
     discoveredLocation: finalStructured.refinedLocation,
     logs: [...initialLogs, ...outputLogs],
-    messages: result.messages,
+    messages: [new HumanMessage(query), result],
   };
 }
