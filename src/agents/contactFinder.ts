@@ -70,6 +70,5 @@ DO NOT return generic placeholders. If info is missing, say "Not found".`;
   return {
     contactCard: finalStructured,
     logs: [...initialLogs, ...outputLogs],
-    messages: result.messages,
   };
 }

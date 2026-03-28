@@ -7,10 +7,9 @@ import {
   Search, UserSearch, PenTool, Copy, Check, AlertCircle as AlertCircleIcon
 } from "lucide-react";
 
-import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
+import { BackgroundBeams } from "@/components/ui/background-beams";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BackgroundBeams } from "@/components/ui/background-beams";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { delay } from "@/lib/utils";
@@ -156,389 +155,479 @@ export default function Dashboard() {
     await processLead(newLead.id, newLead);
   };
 
-  return (
-      <div className="min-h-screen bg-background text-foreground selection:bg-indigo-500/30 overflow-x-hidden relative">
-        <BackgroundBeams className="opacity-40" />
-        <div className="fixed top-6 right-6 z-50">
-          <ThemeToggle />
-        </div>
-        <div className="relative z-10">
-          <section className="px-4">
-            <HeroHighlight>
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
-                className="text-4xl md:text-7xl font-bold text-foreground max-w-4xl leading-tight text-center mx-auto"
-              >
-                AI Lead Intelligence <Highlight className="text-foreground bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">System</Highlight>
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-secondary mt-4 text-center text-lg md:text-xl max-w-2xl mx-auto"
-              >
-                Upload companies → Get research, contacts, and outreach messages in seconds.
-              </motion.p>
-            </HeroHighlight>
-          </section>
+  const downloadLeads = () => {
+    const processedLeads = leads.filter(l => l.status === "success");
+    if (processedLeads.length === 0) return;
 
-          <section className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+    const data = processedLeads.map(l => ({
+      Company: l.companyName,
+      Location: l.discoveredLocation || l.location,
+      Summary: l.businessProfile?.description || "",
+      Scale: l.businessProfile?.sizeSignals || "",
+      Tech: l.businessProfile?.toolsUsed || "",
+      Phone: l.contactCard?.phone || "",
+      Email: l.contactCard?.email || "",
+      WhatsApp: l.contactCard?.whatsapp || "",
+      Outreach: l.outreachMessage || ""
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Verified Leads");
+    XLSX.writeFile(wb, `Lead_Intelligence_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground selection:bg-accent/30 overflow-x-hidden relative font-sans">
+      <div className="fixed inset-0 bg-grid-warm pointer-events-none opacity-50" />
+      <BackgroundBeams className="opacity-[0.03] pointer-events-none" />
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+
+      <div className="relative z-10">
+        {/* Hero Section */}
+        <section className="relative pt-24 pb-16 px-4 overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(212,163,115,0.12)_0,transparent_70%)] pointer-events-none" />
+          <div className="max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-card border border-border rounded-2xl p-6 mb-8 shadow-sm backdrop-blur-sm"
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center space-y-8"
             >
-              <h2 className="text-sm font-bold uppercase tracking-widest text-secondary mb-4 flex items-center gap-2">
-                <Building size={16} />
-                Quick Search
-              </h2>
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="Company Name (e.g. Tesla)"
-                    value={manualCompany}
-                    onChange={(e) => setManualCompany(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-accent transition-all text-sm"
-                  />
+              <h1 className="text-6xl md:text-9xl font-black tracking-tight leading-[0.85] text-foreground">
+                Lead <span className="text-accent italic">Intelligence</span>
+                <br />
+                <span className="text-4xl md:text-7xl font-bold opacity-60">Autonomous Pipeline</span>
+              </h1>
+              <p className="text-foreground/80 text-lg md:text-2xl max-w-2xl mx-auto font-medium leading-relaxed">
+                Transform raw company names into deep business insights, verified contacts, and tailored outreach.
+              </p>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Search & Upload Section */}
+        <section className="max-w-5xl mx-auto px-4 py-12">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"
+          >
+            {/* Quick Search Card */}
+            <div className="glass-card p-10 rounded-[2.5rem] space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-accent/10 border border-accent/20">
+                  <UserSearch size={24} className="text-accent" />
                 </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="Location (optional)"
-                    value={manualLocation}
-                    onChange={(e) => setManualLocation(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-accent transition-all text-sm"
-                  />
+                <h2 className="text-2xl font-black tracking-tight">Manual Entry</h2>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent/80 ml-1">Company Name</label>
+                  <div className="relative group">
+                    <Building className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-accent transition-colors" size={20} />
+                    <input
+                      type="text"
+                      placeholder="e.g. Brokai Labs"
+                      value={manualCompany}
+                      onChange={(e) => setManualCompany(e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 rounded-2xl bg-muted/40 border border-border focus:border-accent/40 focus:ring-8 focus:ring-accent/[0.04] outline-none transition-all text-sm font-bold placeholder:opacity-50"
+                    />
+                  </div>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent/80 ml-1">Location</label>
+                  <div className="relative group">
+                    <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-accent transition-colors" size={20} />
+                    <input
+                      type="text"
+                      placeholder="e.g. India"
+                      value={manualLocation}
+                      onChange={(e) => setManualLocation(e.target.value)}
+                      className="w-full pl-14 pr-6 py-5 rounded-2xl bg-muted/40 border border-border focus:border-accent/40 focus:ring-8 focus:ring-accent/[0.04] outline-none transition-all text-sm font-bold placeholder:opacity-50"
+                    />
+                  </div>
+                </div>
+
                 <button
                   onClick={handleAddManualLead}
                   disabled={!manualCompany.trim()}
-                  className="px-6 py-2 rounded-xl bg-accent text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="w-full py-5 rounded-2xl bg-accent hover:bg-accent/90 text-white font-black tracking-tight shadow-xl shadow-accent/20 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-3 text-lg"
                 >
-                  <Search size={16} />
-                  Find Info
+                  <Search size={22} strokeWidth={3} />
+                  Locate & Analyze Lead
                 </button>
               </div>
-            </motion.div>
-
-            <div className="relative flex items-center py-4 mb-4">
-              <div className="flex-grow border-t border-border"></div>
-              <span className="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-widest text-secondary/40">OR UPLOAD BATCH</span>
-              <div className="flex-grow border-t border-border"></div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <FileUpload onChange={handleFileUpload} accept=".xlsx, .xls, .csv" />
-            </motion.div>
-
-            <AnimatePresence>
-              {leads.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="mt-8 flex justify-center"
-                >
-                  <button
-                    onClick={processAll}
-                    disabled={isProcessingAll}
-                    className="relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50"
-                  >
-                    <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#818cf8_0%,#6366f1_50%,#818cf8_100%)]" />
-                    <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-foreground px-8 py-1 text-sm font-medium text-background backdrop-blur-3xl">
-                      {isProcessingAll ? "Processing Leads..." : "Start Processing All Leads"}
-                    </span>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-
-          <section className="max-w-7xl mx-auto px-4 py-20">
-            <AnimatePresence>
-              {leads.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="grid grid-cols-1 gap-8"
-                >
-                  <div className="flex items-center justify-between mb-8 border-b border-border pb-4">
-                    <h2 className="text-2xl font-bold text-foreground">Analysis Results</h2>
-                    <p className="text-secondary text-sm">{leads.length} Leads Analyzed</p>
+            {/* Upload Card */}
+            <div className="glass-card p-1 rounded-[2.5rem] h-full flex flex-col">
+              <div className="p-10 pb-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-secondary/20 border border-secondary/30">
+                    <Building size={24} className="text-secondary" />
                   </div>
+                  <h2 className="text-2xl font-black tracking-tight">Batch Processing</h2>
+                </div>
+              </div>
+              <div className="flex-1 p-8 pt-0">
+                <FileUpload onChange={handleFileUpload} accept=".xlsx, .xls, .csv" />
+              </div>
+            </div>
+          </motion.div>
 
+          <AnimatePresence>
+            {leads.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-16 flex justify-center"
+              >
+                <button
+                  onClick={processAll}
+                  disabled={isProcessingAll}
+                  className="group relative px-12 py-5 overflow-hidden rounded-2.5xl bg-foreground text-background font-black tracking-tighter text-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-2xl shadow-foreground/10"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-accent to-secondary opacity-0 group-hover:opacity-10 transition-opacity" />
+                  <span className="relative flex items-center gap-4">
+                    {isProcessingAll ? (
+                      <div className="w-6 h-6 border-3 border-background border-t-transparent animate-spin rounded-full" />
+                    ) : (
+                      <>
+                        <PenTool size={24} strokeWidth={2.5} />
+                        Run Full Pipeline Analysis
+                      </>
+                    )}
+                  </span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+
+        {/* Results Section */}
+        <section className="max-w-6xl mx-auto px-4 py-24">
+          <AnimatePresence mode="popLayout">
+            {leads.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-16"
+              >
+                <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-border/40 pb-10 gap-6">
+                  <div>
+                    <h2 className="text-4xl font-black tracking-tight">Intelligence Dashboard</h2>
+                    <p className="text-foreground/50 font-medium mt-2 text-lg italic">Real-time autonomous pipeline monitoring</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {leads.some(l => l.status === "success") && (
+                      <button
+                        onClick={downloadLeads}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent/10 border border-accent/20 text-accent font-bold text-xs hover:bg-accent/20 transition-all shadow-sm"
+                      >
+                        <Copy size={14} />
+                        Export Intelligence (.xlsx)
+                      </button>
+                    )}
+                    <div className="bg-secondary/10 text-secondary px-5 py-2.5 rounded-2xl border border-secondary/20 font-black text-sm tracking-widest uppercase">
+                      {leads.length} Entities
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-12">
                   {leads.map((lead) => (
                     <CompanyCard key={lead.id} lead={lead} onProcess={() => processLead(lead.id)} />
                   ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-        </div>
-      </div>
-    );
-  }
-
-  function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void }) {
-    const [copied, setCopied] = useState(false);
-
-    const copyToClipboard = () => {
-      if (lead.outreachMessage) {
-        navigator.clipboard.writeText(lead.outreachMessage);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    };
-
-    return (
-      <div className="relative group p-[1px] rounded-3xl overflow-hidden transition-all duration-300 bg-card border border-border hover:border-accent/40">
-        <div className="relative bg-card rounded-3xl p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                <Building className="text-indigo-500" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-card-foreground">{lead.companyName}</h3>
-                <div className="flex items-center gap-2 text-secondary text-sm mt-1">
-                  <MapPin size={14} />
-                  {lead.discoveredLocation || lead.location}
-                  {lead.discoveredLocation && lead.location === "Unknown" && (
-                    <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/30 ml-2">Found HQ</span>
-                  )}
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = () => {
+    if (lead.outreachMessage) {
+      navigator.clipboard.writeText(lead.outreachMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="glass-card rounded-[3rem] overflow-hidden group/card relative"
+    >
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
+      
+      <div className="p-10 md:p-16">
+        {/* Card Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-16">
+          <div className="flex items-center gap-8">
+            <div className="relative group/logo">
+              <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity" />
+              <div className="relative w-20 h-20 rounded-[2rem] bg-accent/10 flex items-center justify-center border border-accent/20 shadow-inner overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                <Building className="text-accent w-10 h-10" />
               </div>
             </div>
+            <div>
+              <h3 className="text-4xl font-black tracking-tight text-foreground uppercase leading-none">{lead.companyName}</h3>
+              <div className="flex items-center gap-3 text-secondary font-bold text-sm mt-3">
+                <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20">
+                  <MapPin size={12} className="text-accent" />
+                </div>
+                <span className="opacity-80 uppercase tracking-widest text-xs">{lead.discoveredLocation || lead.location}</span>
+                {lead.discoveredLocation && (
+                   <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 px-2.5 py-1 rounded-full font-black uppercase tracking-[0.1em] shadow-sm">Verified HQ</span>
+                )}
+              </div>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
+            <AnimatePresence mode="wait">
               {lead.status === "idle" && (
-                <button
+                <motion.button
+                  key="idle"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
                   onClick={onProcess}
-                  className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                  className="px-8 py-4 rounded-2.5xl bg-accent text-white font-black text-sm tracking-tight hover:bg-accent/80 transition-all flex items-center gap-3 shadow-lg shadow-accent/20"
                 >
-                  Process Now
-                </button>
+                  <Search size={18} strokeWidth={2.5} />
+                  Initiate Research
+                </motion.button>
               )}
               {lead.status === "processing" && (
-                <div className="flex items-center gap-2 text-indigo-400 text-sm font-medium">
-                  <div className="w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-                  Processing...
-                </div>
+                <motion.div
+                  key="processing"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="px-8 py-4 rounded-2.5xl bg-accent/5 border border-accent/20 text-accent font-black text-sm flex items-center gap-4"
+                >
+                  <div className="w-5 h-5 rounded-full border-3 border-accent border-t-transparent animate-spin" />
+                  Agent Working...
+                </motion.div>
               )}
               {lead.status === "success" && (
-                <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                  <Check size={14} />
-                  Success
-                </div>
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="px-8 py-4 rounded-2.5xl bg-secondary/10 border border-secondary/30 text-secondary font-black text-sm flex items-center gap-3 shadow-xl shadow-secondary/5"
+                >
+                  <Check size={20} strokeWidth={3} className="text-[#433d3c] dark:text-[#ccd5ae]" />
+                  Pipeline Complete
+                </motion.div>
               )}
               {lead.status === "error" && (
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={onProcess}
-                    className="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 underline underline-offset-4"
-                  >
-                    Rerun
-                  </button>
-                  <div className="flex items-center gap-2 text-rose-400 text-sm font-medium bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">
-                    Error
-                  </div>
-                </div>
+                <motion.button
+                  key="error"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onClick={onProcess}
+                  className="px-8 py-4 rounded-2.5xl bg-orange-600/5 border border-orange-600/20 text-orange-600 font-black text-sm hover:bg-orange-600/10 transition-all flex items-center gap-3"
+                >
+                  <AlertCircleIcon size={20} strokeWidth={2.5} />
+                  Retry Process
+                </motion.button>
               )}
-            </div>
+            </AnimatePresence>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary">
-                <Search size={14} />
-                Research
-              </div>
-              {lead.status === "processing" ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              ) : lead.businessProfile ? (
-                <div className="text-sm text-foreground space-y-5">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70 block">Business Summary</span>
-                    <p className="leading-relaxed text-secondary">{lead.businessProfile.description}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70 block">Size & Scale Signals</span>
-                    <p className="leading-relaxed text-secondary">{lead.businessProfile.sizeSignals}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70 block">Digital Presence</span>
-                    <p className="text-accent/80 break-all">{lead.businessProfile.digitalPresence}</p>
-                  </div>
-                  <div className="pt-4 border-t border-border space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70 block">Tools & Systems (Tech Stack)</span>
-                    <p className="text-accent dark:text-accent/80 text-xs italic bg-muted p-2 rounded-lg border border-border">
-                      {lead.businessProfile.toolsUsed}
-                    </p>
-                    {!lead.businessProfile.toolsUsed.toLowerCase().includes("inferred") && (
-                      <span className="text-[9px] text-secondary block mt-1">Note: Tech stack inferred from public signals + job postings</span>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-secondary text-sm italic">Pending research phase...</p>
-              )}
-            </div>
-
-            <div className="space-y-4 border-l border-border pl-0 lg:pl-8">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary">
-                <UserSearch size={14} />
-                Contact Info
-              </div>
-              {lead.status === "processing" ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ) : lead.contactCard ? (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70">Phone:</span>
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-muted border border-border">
-                        <div className="flex flex-col max-w-[80%]">
-                          <span className="text-sm truncate">{lead.contactCard.phone || "Not found"}</span>
-                          {lead.contactCard.phoneSourceLabel && <span className="text-[8px] text-secondary">{lead.contactCard.phoneSourceLabel}</span>}
-                        </div>
-                        {lead.contactCard.phone && lead.contactCard.sourceUrl !== "N/A" && (
-                          <a href={lead.contactCard.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-400 hover:underline">
-                            (source)
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70">Email:</span>
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-muted border border-border">
-                        <div className="flex flex-col max-w-[80%]">
-                          <span className="text-sm truncate">{lead.contactCard.email || "Not found"}</span>
-                          {lead.contactCard.emailSourceLabel && <span className="text-[8px] text-secondary">{lead.contactCard.emailSourceLabel}</span>}
-                        </div>
-                        {lead.contactCard.email && lead.contactCard.sourceUrl !== "N/A" && (
-                          <a href={lead.contactCard.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-400 hover:underline">
-                            (source)
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-accent/70">WhatsApp:</span>
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-muted border border-border">
-                        <div className="flex flex-col max-w-[80%]">
-                          <span className="text-sm truncate">{lead.contactCard.whatsapp || "Not found"}</span>
-                          {lead.contactCard.whatsappSourceLabel && <span className="text-[8px] text-secondary">{lead.contactCard.whatsappSourceLabel}</span>}
-                        </div>
-                        {lead.contactCard.whatsapp && lead.contactCard.sourceUrl !== "N/A" && (
-                          <a href={lead.contactCard.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-400 hover:underline">
-                            (source)
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-4 flex items-center justify-between border-t border-border">
-                    {lead.contactCard.sourceUrl && lead.contactCard.sourceUrl !== "N/A" ? (
-                      <a
-                        href={lead.contactCard.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-accent hover:underline underline-offset-4 flex items-center gap-1"
-                      >
-                        All Evidence Sources
-                        <Copy size={10} className="opacity-50" />
-                      </a>
-                    ) : (
-                      <span className="text-[10px] text-secondary italic">No specific source evidence URL found</span>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-secondary text-sm italic">Waiting for contact finder...</p>
-              )}
-            </div>
-
-            <div className="space-y-4 border-l border-border pl-0 lg:pl-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-secondary">
-                  <PenTool size={14} />
-                  Outreach
-                </div>
-                {lead.outreachMessage && (
-                  <button
-                    onClick={copyToClipboard}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors text-secondary hover:text-foreground"
-                  >
-                    {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                  </button>
-                )}
-              </div>
-              {lead.status === "processing" ? (
-                <Skeleton className="h-32 w-full" />
-              ) : lead.outreachMessage ? (
-                <div className="space-y-4">
-                  <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap font-medium">
-                    {lead.outreachMessage}
-                  </div>
-                  {lead.outreachReasoning && (
-                    <div className="bg-emerald-500/5 border border-emerald-600/20 rounded-xl p-3">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-500/70 block mb-1">Agent Strategy (Why this works?)</span>
-                      <p className="text-[11px] text-secondary italic leading-relaxed">
-                        &quot;{lead.outreachReasoning}&quot;
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-secondary text-sm italic">Generating outreach message...</p>
-              )}
-            </div>
-          </div>
-
-          {lead.logs.length > 0 && (
-            <div className="mt-8 border-t border-border pt-6">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-secondary block mb-3">Multi-Agent Activity Log</span>
-              <div className="bg-muted rounded-xl p-3 font-mono text-[10px] text-secondary h-24 overflow-y-auto space-y-1 scrollbar-hide">
-                {lead.logs.map((log, i) => (
-                  <div key={i} className="flex gap-2">
-                    <span className="text-indigo-500/60 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
-                    <span>{log}</span>
-                  </div>
-                ))}
-                {lead.status === "processing" && (
-                  <div className="flex gap-2 animate-pulse">
-                    <span className="text-indigo-500/60 shrink-0">...</span>
-                    <span>Awaiting agent response...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {lead.error && (
-            <div className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-sm">
-              <p className="font-bold mb-1 flex items-center gap-2"><AlertCircleIcon size={14} /> Error</p>
-              {lead.error}
-            </div>
-          )}
         </div>
+
+        {/* Content Tabs/Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          {/* Research Column */}
+          <div className="lg:col-span-4 space-y-10">
+            <div className="flex items-center gap-4 border-b border-border/40 pb-6">
+              <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20">
+                <Search size={18} className="text-accent" />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-accent/80">Autonomous Research</h4>
+            </div>
+
+            {lead.status === "processing" ? (
+              <div className="space-y-6">
+                <Skeleton className="h-24 w-full rounded-2.5xl" />
+                <Skeleton className="h-14 w-full rounded-2.5xl" />
+                <Skeleton className="h-14 w-full rounded-2.5xl" />
+              </div>
+            ) : lead.businessProfile ? (
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-4">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent/40 block">Executive Summary</span>
+                  <p className="text-xl font-bold leading-relaxed text-foreground tracking-tight">{lead.businessProfile.description}</p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-8">
+                  <div className="p-6 rounded-2.5xl bg-muted/20 border border-border/60 group/item hover:border-accent/40 transition-colors">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/40 block mb-3">Scale & Impact</span>
+                    <p className="text-sm font-bold text-foreground/90 leading-snug">{lead.businessProfile.sizeSignals}</p>
+                  </div>
+                  
+                  <div className="p-6 rounded-2.5xl bg-muted/20 border border-border/60 group/item hover:border-accent/40 transition-colors">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/40 block mb-3">Infrastructure</span>
+                    <p className="text-xs font-mono text-accent font-black tracking-tight">{lead.businessProfile.toolsUsed}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-20 text-center glass rounded-[2.5rem] border-dashed border-2 border-border/40">
+                <p className="text-secondary/30 text-xs font-black uppercase tracking-[0.3em] italic">Awaiting Agent Dispatch...</p>
+              </div>
+            )}
+          </div>
+
+          {/* Contact Column */}
+          <div className="lg:col-span-4 space-y-10">
+            <div className="flex items-center gap-4 border-b border-border/40 pb-6">
+              <div className="p-2.5 rounded-xl bg-secondary/10 border border-secondary/20">
+                <UserSearch size={18} className="text-secondary" />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-secondary/80">Contact Intel</h4>
+            </div>
+
+            {lead.status === "processing" ? (
+              <div className="space-y-4">
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+              </div>
+            ) : lead.contactCard ? (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <ContactItem label="Primary Phone" value={lead.contactCard.phone} source={lead.contactCard.sourceUrl} labelSub={lead.contactCard.phoneSourceLabel} />
+                <ContactItem label="Official Email" value={lead.contactCard.email} source={lead.contactCard.sourceUrl} labelSub={lead.contactCard.emailSourceLabel} />
+                <ContactItem label="WhatsApp Direct" value={lead.contactCard.whatsapp} source={lead.contactCard.sourceUrl} labelSub={lead.contactCard.whatsappSourceLabel} />
+                
+                {lead.contactCard.sourceUrl && lead.contactCard.sourceUrl !== "N/A" && (
+                   <a
+                   href={lead.contactCard.sourceUrl}
+                   target="_blank"
+                   rel="noreferrer"
+                   className="mt-8 flex items-center justify-center gap-3 p-4 rounded-2.5xl bg-muted/40 border border-border/80 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/50 hover:text-accent hover:border-accent/40 hover:bg-muted/60 transition-all font-mono shadow-sm"
+                 >
+                   Explore Verified Source <Copy size={12} />
+                 </a>
+                )}
+              </div>
+            ) : (
+              <div className="py-20 text-center glass rounded-[2.5rem] border-dashed border-2 border-border/40">
+                <p className="text-secondary/30 text-xs font-black uppercase tracking-[0.3em] italic">Awaiting Extraction...</p>
+              </div>
+            )}
+          </div>
+
+          {/* Outreach Column */}
+          <div className="lg:col-span-4 space-y-10">
+            <div className="flex items-center gap-4 border-b border-border/40 pb-6">
+              <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20">
+                <PenTool size={18} className="text-accent" />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-accent/80">Strategic Outreach</h4>
+            </div>
+
+            {lead.status === "processing" ? (
+              <Skeleton className="h-64 w-full rounded-[2.5rem]" />
+            ) : lead.outreachMessage ? (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <div className="relative group/outreach">
+                  <div className="absolute -inset-1.5 bg-gradient-to-br from-accent/20 to-secondary/20 rounded-[3rem] blur-xl opacity-0 group-hover/outreach:opacity-100 transition-opacity" />
+                  <div className="relative p-8 rounded-[2.5rem] bg-accent/[0.04] dark:bg-accent/[0.06] border border-accent/20 text-md font-bold leading-relaxed tracking-tight text-foreground/90 whitespace-pre-wrap shadow-inner">
+                    {lead.outreachMessage}
+                    <button
+                      onClick={copyToClipboard}
+                      className="absolute top-6 right-6 p-3 rounded-2xl bg-background border border-border shadow-md hover:scale-110 active:scale-95 transition-all text-accent group-hover/outreach:bg-muted"
+                    >
+                      {copied ? <Check size={16} strokeWidth={3} className="text-secondary" /> : <Copy size={16} strokeWidth={2.5} />}
+                    </button>
+                  </div>
+                </div>
+
+                {lead.outreachReasoning && (
+                  <div className="p-6 rounded-2.5xl bg-secondary/[0.05] border border-secondary/20 relative overflow-hidden group/reason">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-secondary/30" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-secondary/60 block mb-3">Agent Rationale</span>
+                    <p className="text-xs text-foreground/70 font-bold leading-relaxed italic">&quot;{lead.outreachReasoning}&quot;</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="py-20 text-center glass rounded-[2.5rem] border-dashed border-2 border-border/40">
+                <p className="text-secondary/30 text-xs font-black uppercase tracking-[0.3em] italic">Synthesis Pending...</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Console / Log Footer */}
+        {lead.logs.length > 0 && (
+          <div className="mt-20 pt-10 border-t border-border/40">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(212,163,115,0.5)]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary">Pipeline Console Output</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 h-24 overflow-y-auto scrollbar-hide">
+              {lead.logs.map((log, i) => (
+                <div key={i} className="px-4 py-2.5 rounded-xl bg-muted/30 border border-border/40 text-[9px] font-mono text-accent/70 flex gap-3 items-center hover:bg-muted/50 transition-colors">
+                  <span className="opacity-30 font-bold">{String(i+1).padStart(2, '0')}</span>
+                  <span className="truncate font-bold tracking-tight">{log}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {lead.error && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-10 p-8 rounded-[2.5rem] bg-orange-600/5 border border-orange-600/20 text-orange-600 flex items-center gap-6"
+          >
+            <div className="p-3 rounded-2xl bg-orange-600/10 shadow-inner">
+              <AlertCircleIcon size={24} strokeWidth={2.5} />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-black uppercase tracking-[0.2em] mb-1.5">Pipeline Halt</p>
+              <p className="text-sm font-bold tracking-tight">{lead.error}</p>
+            </div>
+          </motion.div>
+        )}
       </div>
-    );
-  }
+    </motion.div>
+  );
+}
+
+function ContactItem({ label, value, source, labelSub }: { label: string, value?: string, source?: string, labelSub?: string }) {
+  const isFound = value && !value.toLowerCase().includes("not found") && !value.toLowerCase().includes("not public");
+  
+  return (
+    <div className={`p-5 rounded-2.5xl border transition-all duration-300 ${isFound ? 'bg-muted/40 border-secondary/30 group/contact hover:border-accent/50 hover:bg-muted/60 shadow-sm' : 'bg-muted/10 border-dashed border-border/60 opacity-50'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/50">{label}</span>
+        {isFound && source && source !== "N/A" && (
+          <a href={source} target="_blank" rel="noreferrer" className="text-[9px] font-black text-accent hover:underline tracking-widest uppercase">Verify</a>
+        )}
+      </div>
+      <p className="text-md font-black tracking-tight text-foreground truncate">{value || "N/A"}</p>
+      {labelSub && labelSub !== "N/A" && <p className="text-[8px] font-bold text-secondary mt-1.5 uppercase tracking-widest opacity-60 italic">{labelSub}</p>}
+    </div>
+  );
+}

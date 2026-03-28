@@ -69,6 +69,6 @@ export async function researcherNode(state: typeof LeadState.State) {
     discoveredLocation: finalStructured.refinedLocation,
     websiteUrl: finalStructured.officialWebsite,
     logs: [...initialLogs, ...outputLogs],
-    messages: result.messages,
+    // messages: result.messages, // REMOVED to save tokens/TPM
   };
 }

@@ -31,12 +31,12 @@ export const exaSearchTool = tool(
         type: type as "auto" | "fast" | "deep" | "deep-reasoning",
         category: category,
 
-        numResults: Math.min(numResults, 8),
+        numResults: Math.min(numResults, 5), // Reduced from 8 to 5
 
         contents: {
-          highlights: true,
-          text: { maxCharacters: 2000 },
-          maxAgeHours: 48,
+          highlights: { numSentences: 1 }, // Only 1 highlight sentence
+          text: { maxCharacters: 500 }, // Reduced from 1000 to 500
+          maxAgeHours: 72,
         },
 
         includeDomains,
@@ -46,9 +46,10 @@ export const exaSearchTool = tool(
       const cleanedResults = result.results.map((r) => ({
         title: r.title,
         url: r.url,
-        highlights: r.highlights?.slice(0, 2).join(" ") || "",
-        text: r.text ? r.text.substring(0, 800) + "..." : "",
+        highlights: r.highlights?.[0] || "",
+        text: r.text ? r.text.substring(0, 400) + "..." : "",
       }));
+
 
       return JSON.stringify(cleanedResults, null, 2);
     } catch (e: unknown) {

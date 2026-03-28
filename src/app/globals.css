@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #fdfbf7; /* Very light beige */
+  --foreground: #433d3c; /* Dark brownish-grey */
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --border: #e2e8f0;
-  --secondary: #64748b;
-  --muted: #f1f5f9;
-  --accent: #6366f1;
+  --card-foreground: #433d3c;
+  --border: #ccd5ae; /* Sage border for light mode */
+  --secondary: #ccd5ae; /* Sage */
+  --muted: #fefae0; /* Cornsilk */
+  --accent: #d4a373; /* Bronze */
+  --accent-foreground: #ffffff;
+  --ring: rgba(212, 163, 115, 0.4);
 }
 
 @theme inline {
@@ -20,44 +22,60 @@
   --color-secondary: var(--secondary);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/* The .dark class below handles the dark mode variables manually */
-
 .dark {
-  --background: #030303;
-  --foreground: #f8fafc;
-  --card: #0a0a0a;
-  --card-foreground: #f8fafc;
-  --border: #1e293b;
-  --secondary: #94a3b8;
-  --muted: #0f172a;
-  --accent: #818cf8;
+  --background: #141411; /* Deeper dark warm brown */
+  --foreground: #fefae0; /* Creamy text */
+  --card: #1c1c18;
+  --card-foreground: #fefae0;
+  --border: #2d2d24;
+  --secondary: #ccd5ae;
+  --muted: #25251d;
+  --accent: #d4a373;
+  --accent-foreground: #ffffff;
+  --ring: rgba(212, 163, 115, 0.4);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  letter-spacing: -0.01em;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 @layer utilities {
-  .bg-dot-white\/\[0\.2\] {
-    background-image: radial-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  .glass {
+    background: rgba(var(--background), 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--border), 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .glass-card {
+    background: color-mix(in srgb, var(--card) 60%, transparent);
+    backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-[#d4a373] via-[#ccd5ae] to-[#faedcd];
+  }
+
+  .bg-dot-pattern {
+    background-image: radial-gradient(circle, #ccd5ae 1px, transparent 1px);
     background-size: 24px 24px;
+    opacity: 0.15;
   }
-  .bg-dot-thick-neutral-300 {
-    background-image: radial-gradient(rgba(212, 212, 212, 0.3) 2px, transparent 2px);
-    background-size: 32px 32px;
-  }
-  .bg-dot-thick-neutral-800 {
-    background-image: radial-gradient(rgba(38, 38, 38, 0.3) 2px, transparent 2px);
-    background-size: 32px 32px;
-  }
-  .bg-dot-thick-indigo-500 {
-    background-image: radial-gradient(rgba(99, 102, 241, 0.4) 2px, transparent 2px);
-    background-size: 32px 32px;
+
+  .bg-grid-warm {
+    background-image: linear-gradient(to right, rgba(212, 163, 115, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(212, 163, 115, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }
