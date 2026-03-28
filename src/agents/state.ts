@@ -7,6 +7,7 @@ export interface BusinessProfile {
   digitalPresence: string;
   toolsUsed: string;
   refinedLocation?: string;
+  officialWebsite?: string;
 }
 
 export interface ContactCard {
@@ -19,23 +20,65 @@ export interface ContactCard {
   sourceUrl: string;
 }
 
+const defaultBusinessProfile: BusinessProfile = {
+  description: "Not found",
+  sizeSignals: "Not found",
+  digitalPresence: "Not found",
+  toolsUsed: "Not found",
+  refinedLocation: undefined,
+  officialWebsite: "N/A",
+};
+
+const defaultContactCard: ContactCard = {
+  phone: "Not found",
+  phoneSourceLabel: "N/A",
+  email: "Not publicly available",
+  emailSourceLabel: "N/A",
+  whatsapp: "Not found",
+  whatsappSourceLabel: "N/A",
+  sourceUrl: "N/A",
+};
+
 export const LeadState = Annotation.Root({
   companyName: Annotation<string>(),
   location: Annotation<string>(),
+
   discoveredLocation: Annotation<string | undefined>(),
-  
-  businessProfile: Annotation<BusinessProfile>(),
-  contactCard: Annotation<ContactCard>(),
+  websiteUrl: Annotation<string | undefined>(),
+  researchRetryCount: Annotation<number>({
+    reducer: (x, y) => (y !== undefined ? x + y : x),
+    default: () => 0,
+  }),
+  contactRetryCount: Annotation<number>({
+    reducer: (x, y) => (y !== undefined ? x + y : x),
+    default: () => 0,
+  }),
+
+  businessProfile: Annotation<BusinessProfile>({
+    reducer: (_, update) => update ?? defaultBusinessProfile,
+    default: () => defaultBusinessProfile,
+  }),
+
+  contactCard: Annotation<ContactCard>({
+    reducer: (_, update) => update ?? defaultContactCard,
+    default: () => defaultContactCard,
+  }),
+
   outreachMessage: Annotation<string>(),
   outreachReasoning: Annotation<string>(),
-  
+
   logs: Annotation<string[]>({
     reducer: (x, y) => x.concat(y),
     default: () => [],
   }),
-  
+
   messages: Annotation<BaseMessage[]>({
-    reducer: (x, y) => x.concat(y),
+    reducer: (left, right) => {
+      if (!right) return left;
+      return Array.isArray(right)
+        ? left.concat(right)
+        : left.concat([right]);
+    },
     default: () => [],
   }),
 });

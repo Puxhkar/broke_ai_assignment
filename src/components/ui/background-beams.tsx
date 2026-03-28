@@ -9,7 +9,7 @@ export const BackgroundBeams = ({ className }: { className?: string }) => {
     <div
       ref={beamsRef}
       className={cn(
-        "absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]",
+        "absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] pointer-events-none",
         className
       )}
     >
@@ -17,27 +17,15 @@ export const BackgroundBeams = ({ className }: { className?: string }) => {
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 1440 900"
         fill="none"
-        className="absolute inset-0 h-full w-full opacity-[0.1]"
+        className="absolute inset-0 h-full w-full opacity-[0.1] dark:opacity-[0.05]"
       >
         <path
           d="M0 0H1440V900H0V0Z"
-          fill="url(#paint0_linear_1808_12697)"
+          fill="currentColor"
+          className="text-foreground/20"
         ></path>
-        <defs>
-          <linearGradient
-            id="paint0_linear_1808_12697"
-            x1="720"
-            y1="0"
-            x2="720"
-            y2="900"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="white"></stop>
-            <stop offset="1" stopColor="white" stopOpacity="0"></stop>
-          </linearGradient>
-        </defs>
       </svg>
-      <div className="absolute inset-0 bg-dot-white/[0.2] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+      <div className="absolute inset-0 bg-dot-thick-neutral-300 dark:bg-dot-thick-neutral-800 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
     </div>
   );
 };

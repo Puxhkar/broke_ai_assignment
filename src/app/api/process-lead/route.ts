@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { leadProcessorApp } from "../../../agents/index";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -26,6 +26,7 @@ export async function POST(req: Request) {
 
           for await (const update of eventStream) {
             const chunk = encoder.encode(JSON.stringify(update) + "\n");
+            console.log(chunk)
             controller.enqueue(chunk);
           }
           
