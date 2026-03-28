@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fdfbf7; /* Very light beige */
-  --foreground: #433d3c; /* Dark brownish-grey */
+  --background: #fdfbf7; /* Warm Off-White Sand */
+  --foreground: #3d3d33; /* Deep Umber / Charcoal */
   --card: #ffffff;
-  --card-foreground: #433d3c;
-  --border: #ccd5ae; /* Sage border for light mode */
-  --secondary: #ccd5ae; /* Sage */
+  --card-foreground: #3d3d33;
+  --border: #ccd5ae; /* Sage */
+  --secondary: #ccd5ae;
   --muted: #fefae0; /* Cornsilk */
   --accent: #d4a373; /* Bronze */
   --accent-foreground: #ffffff;
@@ -28,13 +28,13 @@
 }
 
 .dark {
-  --background: #141411; /* Deeper dark warm brown */
-  --foreground: #fefae0; /* Creamy text */
-  --card: #1c1c18;
+  --background: #0c0c0a; /* Deep Espresso */
+  --foreground: #fefae0; /* Cornsilk Text */
+  --card: #181814;
   --card-foreground: #fefae0;
   --border: #2d2d24;
   --secondary: #ccd5ae;
-  --muted: #25251d;
+  --muted: #1c1c18;
   --accent: #d4a373;
   --accent-foreground: #ffffff;
   --ring: rgba(212, 163, 115, 0.4);
@@ -44,23 +44,28 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  letter-spacing: -0.01em;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  letter-spacing: -0.015em;
+  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer utilities {
   .glass {
-    background: rgba(var(--background), 0.4);
+    background: color-mix(in srgb, var(--background) 40%, transparent);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(var(--border), 0.2);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid color-mix(in srgb, var(--border) 20%, transparent);
   }
   
   .glass-card {
-    background: color-mix(in srgb, var(--card) 60%, transparent);
-    backdrop-filter: blur(16px);
-    border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
-    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05);
+    background: color-mix(in srgb, var(--card) 90%, transparent);
+    backdrop-filter: blur(20px);
+    border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Target dark mode specifically for different card opacity if needed */
+  :global(.dark) .glass-card {
+    background: color-mix(in srgb, var(--card) 70%, transparent);
   }
 
   .text-gradient {
@@ -68,14 +73,14 @@ body {
   }
 
   .bg-dot-pattern {
-    background-image: radial-gradient(circle, #ccd5ae 1px, transparent 1px);
+    background-image: radial-gradient(circle, var(--secondary) 1px, transparent 1px);
     background-size: 24px 24px;
-    opacity: 0.15;
+    opacity: 0.12;
   }
 
   .bg-grid-warm {
-    background-image: linear-gradient(to right, rgba(212, 163, 115, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(212, 163, 115, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-image: linear-gradient(to right, color-mix(in srgb, var(--accent) 8%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--accent) 8%, transparent) 1px, transparent 1px);
+    background-size: 50px 50px;
   }
 }

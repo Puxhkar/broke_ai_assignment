@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import {
   Building, MapPin,
@@ -46,6 +46,11 @@ export default function Dashboard() {
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [manualCompany, setManualCompany] = useState("");
   const [manualLocation, setManualLocation] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleFileUpload = (file: File) => {
     const reader = new FileReader();
@@ -179,29 +184,32 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-accent/30 overflow-x-hidden relative font-sans">
-      <div className="fixed inset-0 bg-grid-warm pointer-events-none opacity-50" />
-      <BackgroundBeams className="opacity-[0.03] pointer-events-none" />
+      {mounted && (
+        <>
+          <div className="fixed inset-0 bg-grid-warm pointer-events-none opacity-50" />
+          <BackgroundBeams className="opacity-[0.03] pointer-events-none" />
+        </>
+      )}
       <div className="fixed top-6 right-6 z-50">
         <ThemeToggle />
       </div>
 
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-24 pb-16 px-4 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(212,163,115,0.12)_0,transparent_70%)] pointer-events-none" />
-          <div className="max-w-5xl mx-auto">
+        <section className="relative pt-32 pb-16 px-4 overflow-hidden">
+          <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-center space-y-8"
+              className="text-center space-y-10"
             >
-              <h1 className="text-6xl md:text-9xl font-black tracking-tight leading-[0.85] text-foreground">
-                Lead <span className="text-accent italic">Intelligence</span>
+              <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter leading-[0.8] text-foreground lowercase">
+                Lead <span className="text-accent italic font-medium tracking-normal">intelligence</span>
                 <br />
-                <span className="text-4xl md:text-7xl font-bold opacity-60">Autonomous Pipeline</span>
+                <span className="text-4xl md:text-7xl font-bold opacity-40 tracking-tight">Autonomous pipeline</span>
               </h1>
-              <p className="text-foreground/80 text-lg md:text-2xl max-w-2xl mx-auto font-medium leading-relaxed">
+              <p className="text-foreground/70 text-xl md:text-3xl max-w-3xl mx-auto font-medium leading-relaxed tracking-tight">
                 Transform raw company names into deep business insights, verified contacts, and tailored outreach.
               </p>
             </motion.div>
@@ -209,47 +217,48 @@ export default function Dashboard() {
         </section>
 
         {/* Search & Upload Section */}
-        <section className="max-w-5xl mx-auto px-4 py-12">
+        <section className="max-w-6xl mx-auto px-4 py-12">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start"
           >
             {/* Quick Search Card */}
-            <div className="glass-card p-10 rounded-[2.5rem] space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-accent/10 border border-accent/20">
-                  <UserSearch size={24} className="text-accent" />
+            <div className="glass-card p-12 rounded-[3.5rem] space-y-10 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -mr-12 -mt-12 blur-3xl" />
+              <div className="flex items-center gap-5">
+                <div className="p-4 rounded-2.5xl bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors">
+                  <UserSearch size={28} className="text-accent" />
                 </div>
-                <h2 className="text-2xl font-black tracking-tight">Manual Entry</h2>
+                <h2 className="text-3xl font-black tracking-tight">Manual Entry</h2>
               </div>
               
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent/80 ml-1">Company Name</label>
-                  <div className="relative group">
-                    <Building className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-accent transition-colors" size={20} />
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.3em] text-accent/60 ml-2">Company Name</label>
+                  <div className="relative group/input">
+                    <Building className="absolute left-6 top-1/2 -translate-y-1/2 text-secondary/50 group-focus-within/input:text-accent transition-colors" size={24} />
                     <input
                       type="text"
                       placeholder="e.g. Brokai Labs"
                       value={manualCompany}
                       onChange={(e) => setManualCompany(e.target.value)}
-                      className="w-full pl-14 pr-6 py-5 rounded-2xl bg-muted/40 border border-border focus:border-accent/40 focus:ring-8 focus:ring-accent/[0.04] outline-none transition-all text-sm font-bold placeholder:opacity-50"
+                      className="w-full pl-16 pr-8 py-6 rounded-3xl bg-muted/20 border border-border/50 focus:border-accent/40 focus:ring-[12px] focus:ring-accent/[0.04] outline-none transition-all text-lg font-bold placeholder:opacity-40"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent/80 ml-1">Location</label>
-                  <div className="relative group">
-                    <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-accent transition-colors" size={20} />
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black uppercase tracking-[0.3em] text-accent/60 ml-2">Location</label>
+                  <div className="relative group/input">
+                    <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-secondary/50 group-focus-within/input:text-accent transition-colors" size={24} />
                     <input
                       type="text"
                       placeholder="e.g. India"
                       value={manualLocation}
                       onChange={(e) => setManualLocation(e.target.value)}
-                      className="w-full pl-14 pr-6 py-5 rounded-2xl bg-muted/40 border border-border focus:border-accent/40 focus:ring-8 focus:ring-accent/[0.04] outline-none transition-all text-sm font-bold placeholder:opacity-50"
+                      className="w-full pl-16 pr-8 py-6 rounded-3xl bg-muted/20 border border-border/50 focus:border-accent/40 focus:ring-[12px] focus:ring-accent/[0.04] outline-none transition-all text-lg font-bold placeholder:opacity-40"
                     />
                   </div>
                 </div>
@@ -257,25 +266,25 @@ export default function Dashboard() {
                 <button
                   onClick={handleAddManualLead}
                   disabled={!manualCompany.trim()}
-                  className="w-full py-5 rounded-2xl bg-accent hover:bg-accent/90 text-white font-black tracking-tight shadow-xl shadow-accent/20 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-3 text-lg"
+                  className="w-full py-6 rounded-3xl bg-accent hover:bg-accent/90 text-white font-black tracking-tight shadow-2xl shadow-accent/20 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-4 text-xl"
                 >
-                  <Search size={22} strokeWidth={3} />
-                  Locate & Analyze Lead
+                  <Search size={24} strokeWidth={3} />
+                  Analyze Lead
                 </button>
               </div>
             </div>
 
             {/* Upload Card */}
-            <div className="glass-card p-1 rounded-[2.5rem] h-full flex flex-col">
-              <div className="p-10 pb-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-secondary/20 border border-secondary/30">
-                    <Building size={24} className="text-secondary" />
+            <div className="glass-card p-1 rounded-[3.5rem] h-full flex flex-col group/upload overflow-hidden">
+              <div className="p-12 pb-8">
+                <div className="flex items-center gap-5">
+                  <div className="p-4 rounded-2.5xl bg-secondary/10 border border-secondary/20 shadow-inner group-hover/upload:bg-secondary/20 transition-colors">
+                    <Building size={28} className="text-secondary" />
                   </div>
-                  <h2 className="text-2xl font-black tracking-tight">Batch Processing</h2>
+                  <h2 className="text-3xl font-black tracking-tight">Batch Sync</h2>
                 </div>
               </div>
-              <div className="flex-1 p-8 pt-0">
+              <div className="flex-1 p-10 pt-0">
                 <FileUpload onChange={handleFileUpload} accept=".xlsx, .xls, .csv" />
               </div>
             </div>
@@ -371,47 +380,47 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
       layout
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="glass-card rounded-[3rem] overflow-hidden group/card relative"
+      className="glass-card rounded-[3.5rem] overflow-hidden group/card relative mb-12 shadow-2xl shadow-accent/5 transition-all hover:shadow-accent/10 border-border/40"
     >
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
+      <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-accent/40 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
       
       <div className="p-10 md:p-16">
         {/* Card Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-16">
-          <div className="flex items-center gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 mb-20">
+          <div className="flex items-center gap-10">
             <div className="relative group/logo">
-              <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity" />
-              <div className="relative w-20 h-20 rounded-[2rem] bg-accent/10 flex items-center justify-center border border-accent/20 shadow-inner overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-                <Building className="text-accent w-10 h-10" />
+              <div className="absolute inset-0 bg-accent/20 blur-3xl rounded-full opacity-0 group-hover/logo:opacity-100 transition-opacity duration-700" />
+              <div className="relative w-24 h-24 rounded-[2.5rem] bg-accent/10 flex items-center justify-center border border-accent/20 shadow-inner overflow-hidden group-hover/logo:scale-105 transition-transform duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+                <Building className="text-accent w-12 h-12 stroke-[2.5px]" />
               </div>
             </div>
-            <div>
-              <h3 className="text-4xl font-black tracking-tight text-foreground uppercase leading-none">{lead.companyName}</h3>
-              <div className="flex items-center gap-3 text-secondary font-bold text-sm mt-3">
-                <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20">
-                  <MapPin size={12} className="text-accent" />
+            <div className="space-y-2">
+              <h3 className="text-4xl md:text-5xl font-black tracking-tighter text-foreground uppercase leading-tight">{lead.companyName}</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-muted/60 border border-border/50 text-secondary font-black text-[10px] tracking-[0.1em] uppercase shadow-sm">
+                  <MapPin size={14} className="text-accent" />
+                  {lead.discoveredLocation || lead.location}
                 </div>
-                <span className="opacity-80 uppercase tracking-widest text-xs">{lead.discoveredLocation || lead.location}</span>
                 {lead.discoveredLocation && (
-                   <span className="text-[10px] bg-accent/10 text-accent border border-accent/20 px-2.5 py-1 rounded-full font-black uppercase tracking-[0.1em] shadow-sm">Verified HQ</span>
+                   <span className="text-[9px] bg-accent/15 text-accent border border-accent/25 px-4 py-1.5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-sm animate-in fade-in zoom-in duration-500">Verified HQ</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <AnimatePresence mode="wait">
               {lead.status === "idle" && (
                 <motion.button
                   key="idle"
-                  initial={{ opacity: 0, x: 10 }}
+                  initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
+                  exit={{ opacity: 0, x: -20 }}
                   onClick={onProcess}
-                  className="px-8 py-4 rounded-2.5xl bg-accent text-white font-black text-sm tracking-tight hover:bg-accent/80 transition-all flex items-center gap-3 shadow-lg shadow-accent/20"
+                  className="px-10 py-5 rounded-[1.8rem] bg-accent text-white font-black text-sm tracking-[0.05em] uppercase hover:bg-accent/90 transition-all flex items-center gap-4 shadow-2xl shadow-accent/25 active:scale-95 group/btn"
                 >
-                  <Search size={18} strokeWidth={2.5} />
+                  <Search size={20} strokeWidth={3} className="group-hover/btn:scale-110 transition-transform" />
                   Initiate Research
                 </motion.button>
               )}
@@ -420,10 +429,10 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
                   key="processing"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="px-8 py-4 rounded-2.5xl bg-accent/5 border border-accent/20 text-accent font-black text-sm flex items-center gap-4"
+                  className="px-10 py-5 rounded-[1.8rem] bg-accent/[0.03] border-2 border-accent/15 text-accent font-black text-sm uppercase tracking-widest flex items-center gap-5 shadow-inner"
                 >
-                  <div className="w-5 h-5 rounded-full border-3 border-accent border-t-transparent animate-spin" />
-                  Agent Working...
+                  <div className="w-6 h-6 rounded-full border-[3px] border-accent border-t-transparent animate-spin" />
+                  Agent Working
                 </motion.div>
               )}
               {lead.status === "success" && (
@@ -431,9 +440,11 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
                   key="success"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="px-8 py-4 rounded-2.5xl bg-secondary/10 border border-secondary/30 text-secondary font-black text-sm flex items-center gap-3 shadow-xl shadow-secondary/5"
+                  className="px-10 py-5 rounded-[1.8rem] bg-secondary/15 border border-secondary/30 text-secondary font-black text-sm uppercase tracking-[0.15em] flex items-center gap-4 shadow-xl shadow-secondary/5"
                 >
-                  <Check size={20} strokeWidth={3} className="text-[#433d3c] dark:text-[#ccd5ae]" />
+                  <div className="p-1 rounded-full bg-secondary/20 shadow-inner">
+                    <Check size={18} strokeWidth={4} className="text-foreground" />
+                  </div>
                   Pipeline Complete
                 </motion.div>
               )}
@@ -443,9 +454,9 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   onClick={onProcess}
-                  className="px-8 py-4 rounded-2.5xl bg-orange-600/5 border border-orange-600/20 text-orange-600 font-black text-sm hover:bg-orange-600/10 transition-all flex items-center gap-3"
+                  className="px-10 py-5 rounded-[1.8rem] bg-orange-600/5 border-2 border-orange-600/20 text-orange-600 font-black text-sm uppercase tracking-widest hover:bg-orange-600/10 transition-all flex items-center gap-4 active:scale-95"
                 >
-                  <AlertCircleIcon size={20} strokeWidth={2.5} />
+                  <AlertCircleIcon size={22} strokeWidth={3} />
                   Retry Process
                 </motion.button>
               )}
@@ -579,15 +590,18 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
 
         {/* Console / Log Footer */}
         {lead.logs.length > 0 && (
-          <div className="mt-20 pt-10 border-t border-border/40">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_rgba(212,163,115,0.5)]" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary">Pipeline Console Output</span>
+          <div className="mt-20 pt-12 border-t border-border/30">
+            <div className="flex items-center gap-6 mb-8">
+              <div className="relative">
+                <div className="absolute inset-0 bg-accent/50 blur-lg rounded-full animate-pulse" />
+                <div className="relative w-3.5 h-3.5 rounded-full bg-accent shadow-[0_0_12px_rgba(212,163,115,0.8)]" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-[0.5em] text-accent/60">Autonomous Pipeline Log</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 h-24 overflow-y-auto scrollbar-hide">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-32 overflow-y-auto scrollbar-hide pr-2">
               {lead.logs.map((log, i) => (
-                <div key={i} className="px-4 py-2.5 rounded-xl bg-muted/30 border border-border/40 text-[9px] font-mono text-accent/70 flex gap-3 items-center hover:bg-muted/50 transition-colors">
-                  <span className="opacity-30 font-bold">{String(i+1).padStart(2, '0')}</span>
+                <div key={i} className="px-5 py-4 rounded-2xl bg-muted/30 border border-border/40 text-[10px] font-mono text-accent/80 flex gap-4 items-center hover:bg-muted/50 transition-all duration-300 group/log">
+                  <span className="opacity-30 font-bold group-hover/log:opacity-60 transition-opacity">{String(i+1).padStart(2, '0')}</span>
                   <span className="truncate font-bold tracking-tight">{log}</span>
                 </div>
               ))}
@@ -619,15 +633,17 @@ function ContactItem({ label, value, source, labelSub }: { label: string, value?
   const isFound = value && !value.toLowerCase().includes("not found") && !value.toLowerCase().includes("not public");
   
   return (
-    <div className={`p-5 rounded-2.5xl border transition-all duration-300 ${isFound ? 'bg-muted/40 border-secondary/30 group/contact hover:border-accent/50 hover:bg-muted/60 shadow-sm' : 'bg-muted/10 border-dashed border-border/60 opacity-50'}`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-accent/50">{label}</span>
+    <div className={`p-6 rounded-[2rem] border transition-all duration-500 relative overflow-hidden group/contact ${isFound ? 'bg-muted/40 border-secondary/30 hover:border-accent/60 hover:bg-muted/60 shadow-lg shadow-accent/[0.02]' : 'bg-muted/10 border-dashed border-border/60 opacity-60'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-accent/50">{label}</span>
         {isFound && source && source !== "N/A" && (
-          <a href={source} target="_blank" rel="noreferrer" className="text-[9px] font-black text-accent hover:underline tracking-widest uppercase">Verify</a>
+          <a href={source} target="_blank" rel="noreferrer" className="p-2 rounded-xl bg-accent/5 opacity-0 group-hover/contact:opacity-100 transition-opacity duration-300">
+             <Copy size={12} className="text-accent" />
+          </a>
         )}
       </div>
-      <p className="text-md font-black tracking-tight text-foreground truncate">{value || "N/A"}</p>
-      {labelSub && labelSub !== "N/A" && <p className="text-[8px] font-bold text-secondary mt-1.5 uppercase tracking-widest opacity-60 italic">{labelSub}</p>}
+      <p className={`text-lg font-black tracking-tight truncate ${isFound ? 'text-foreground' : 'text-foreground/30'}`}>{value || "N/A"}</p>
+      {labelSub && labelSub !== "N/A" && <p className="text-[9px] font-bold text-secondary mt-2 uppercase tracking-widest opacity-60 italic">{labelSub}</p>}
     </div>
   );
 }
