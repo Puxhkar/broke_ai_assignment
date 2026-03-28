@@ -3,6 +3,7 @@ import { exaSearchTool } from "./tools/exa";
 import { LeadState } from "./state";
 import { z } from "zod";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 const llm = new ChatGoogle({
   model: "gemini-2.5-flash",
@@ -30,13 +31,18 @@ export async function contactFinderNode(state: typeof LeadState.State) {
 
   const query = `Find contact info and specific source reasons for "${companyName}" in "${targetLocation}".`;
 
-  const modelWithTools = llm.bindTools([exaSearchTool]);
-  const result = await modelWithTools.invoke([
-    new SystemMessage(contactSystemPrompt),
-    new HumanMessage(query)
-  ]);
+  // Create a React agent for the Tool-Response loop
+  const agent = createReactAgent({
+    llm,
+    tools: [exaSearchTool],
+    messageModifier: contactSystemPrompt,
+  });
 
-  const finalAgentMessage = result.content as string;
+  const result = await agent.invoke({
+    messages: [new HumanMessage(query)]
+  });
+
+  const finalAgentMessage = result.messages[result.messages.length - 1].content as string;
   const structuredLlm = llm.withStructuredOutput(contactCardSchema);
 
   const finalStructured = await structuredLlm.invoke([
@@ -51,6 +57,6 @@ export async function contactFinderNode(state: typeof LeadState.State) {
   return {
     contactCard: finalStructured,
     logs: [...initialLogs, ...outputLogs],
-    messages: [new HumanMessage(query), result],
+    messages: result.messages,
   };
 }

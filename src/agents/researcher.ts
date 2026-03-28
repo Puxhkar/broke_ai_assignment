@@ -3,6 +3,7 @@ import { exaSearchTool } from "./tools/exa";
 import { LeadState } from "./state";
 import { z } from "zod";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 const llm = new ChatGoogle({
   model: "gemini-2.5-flash",
@@ -34,13 +35,18 @@ export async function researcherNode(state: typeof LeadState.State) {
 
   const query = `Research company "${companyName}" ${location !== "Unknown" ? `in ${location}` : ""}. Find summary, scale, tech stack, and HQ.`;
 
-  const modelWithTools = llm.bindTools([exaSearchTool]);
-  const result = await modelWithTools.invoke([
-    new SystemMessage(researchSystemPrompt),
-    new HumanMessage(query)
-  ]);
+  // Create a React agent for the Tool-Response loop
+  const agent = createReactAgent({
+    llm,
+    tools: [exaSearchTool],
+    messageModifier: researchSystemPrompt,
+  });
 
-  const finalAgentMessage = result.content as string;
+  const result = await agent.invoke({
+    messages: [new HumanMessage(query)]
+  });
+
+  const finalAgentMessage = result.messages[result.messages.length - 1].content as string;
   const structuredLlm = llm.withStructuredOutput(businessProfileSchema);
 
   const finalStructured = await structuredLlm.invoke([
@@ -59,6 +65,6 @@ export async function researcherNode(state: typeof LeadState.State) {
     businessProfile: finalStructured,
     discoveredLocation: finalStructured.refinedLocation,
     logs: [...initialLogs, ...outputLogs],
-    messages: [new HumanMessage(query), result],
+    messages: result.messages,
   };
 }
