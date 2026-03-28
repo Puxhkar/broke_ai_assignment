@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { 
-  Building, MapPin, Mail, Phone, MessageCircle, 
+  Building, MapPin,
   Search, UserSearch, PenTool, Copy, Check, AlertCircle as AlertCircleIcon
 } from "lucide-react";
 
@@ -11,12 +11,15 @@ import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
+import { delay } from "@/lib/utils";
 
 interface Lead {
   id: string;
   companyName: string;
   location: string;
+  discoveredLocation?: string;
   status: "idle" | "processing" | "success" | "error";
+  logs: string[];
   businessProfile?: {
     description: string;
     sizeSignals: string;
@@ -25,11 +28,15 @@ interface Lead {
   };
   contactCard?: {
     phone?: string;
+    phoneSourceLabel?: string;
     email?: string;
+    emailSourceLabel?: string;
     whatsapp?: string;
+    whatsappSourceLabel?: string;
     sourceUrl: string;
   };
   outreachMessage?: string;
+  outreachReasoning?: string;
   error?: string;
 }
 
@@ -51,6 +58,7 @@ export default function Dashboard() {
         companyName: row["Company Name"] || row["company_name"] || row["Company"] || row["name"] || row["Name"] || row["Organization"] || "Unknown",
         location: row["Location"] || row["location"] || row["City"] || row["city"] || row["Address"] || row["address"] || "Unknown",
         status: "idle" as const,
+        logs: [],
       })).filter(l => l.companyName !== "Unknown");
 
       setLeads(parsedLeads);
@@ -59,7 +67,7 @@ export default function Dashboard() {
   };
 
   const processLead = async (id: string) => {
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "processing", error: undefined } : l)));
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "processing", logs: ["Init: Requesting pipeline access..."], error: undefined } : l)));
     
     const lead = leads.find((l) => l.id === id);
     if (!lead) return;
@@ -71,30 +79,46 @@ export default function Dashboard() {
         body: JSON.stringify({ companyName: lead.companyName, location: lead.location }),
       });
 
-      const data = await response.json();
+      if (!response.ok) throw new Error("Connection failed");
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("Stream unavailable");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to process");
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const update = JSON.parse(line);
+
+          if (update.error) throw new Error(update.error);
+
+          setLeads((prev) => prev.map((l) => {
+            if (l.id !== id) return l;
+            
+            // LangGraph updates format: { node_name: { state_updates } }
+            const nodeName = Object.keys(update)[0];
+            const data = update[nodeName];
+
+            return {
+              ...l,
+              ...data,
+              logs: data.logs ? [...l.logs, ...data.logs] : l.logs,
+              status: nodeName === "outreach_writer" ? "success" : "processing",
+            };
+          }));
+        }
       }
-
-      setLeads((prev) =>
-        prev.map((l) =>
-          l.id === id
-            ? {
-                ...l,
-                status: "success",
-                businessProfile: data.businessProfile,
-                contactCard: data.contactCard,
-                outreachMessage: data.outreachMessage,
-              }
-            : l
-        )
-      );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to process";
-      setLeads((prev) =>
-        prev.map((l) => (l.id === id ? { ...l, status: "error", error: errorMessage } : l))
-      );
+      const msg = error instanceof Error ? error.message : "Stream error";
+      setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status: "error", error: msg } : l)));
     }
   };
 
@@ -103,6 +127,7 @@ export default function Dashboard() {
     for (const lead of leads) {
       if (lead.status === "idle" || lead.status === "error") {
         await processLead(lead.id);
+        await delay(4000); // 4s delay between leads to respect rate limits
       }
     }
     setIsProcessingAll(false);
@@ -212,7 +237,10 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
               <h3 className="text-xl font-bold text-white">{lead.companyName}</h3>
               <div className="flex items-center gap-2 text-neutral-400 text-sm mt-1">
                 <MapPin size={14} />
-                {lead.location}
+                {lead.discoveredLocation || lead.location}
+                {lead.discoveredLocation && lead.location === "Unknown" && (
+                  <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/30 ml-2">Found HQ</span>
+                )}
               </div>
             </div>
           </div>
@@ -239,8 +267,16 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
               </div>
             )}
             {lead.status === "error" && (
-              <div className="flex items-center gap-2 text-rose-400 text-sm font-medium bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">
-                Error
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={onProcess}
+                  className="text-xs font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 underline underline-offset-4"
+                >
+                  Rerun
+                </button>
+                <div className="flex items-center gap-2 text-rose-400 text-sm font-medium bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">
+                  Error
+                </div>
               </div>
             )}
           </div>
@@ -259,12 +295,27 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
                 <Skeleton className="h-4 w-1/2" />
               </div>
             ) : lead.businessProfile ? (
-              <div className="text-sm text-neutral-300 space-y-4">
-                <p><span className="text-white font-medium">Summary:</span> {lead.businessProfile.description}</p>
-                <p><span className="text-white font-medium">Scale:</span> {lead.businessProfile.sizeSignals}</p>
-                <div className="pt-2">
-                  <span className="text-xs text-neutral-500 block mb-2 uppercase">Tech Stack</span>
-                  <p className="text-indigo-300">{lead.businessProfile.toolsUsed}</p>
+              <div className="text-sm text-neutral-300 space-y-5">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500/60 block">Business Summary</span>
+                  <p className="leading-relaxed opacity-90">{lead.businessProfile.description}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500/60 block">Size & Scale Signals</span>
+                  <p className="leading-relaxed opacity-90">{lead.businessProfile.sizeSignals}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500/60 block">Digital Presence</span>
+                  <p className="text-indigo-400 break-all">{lead.businessProfile.digitalPresence}</p>
+                </div>
+                <div className="pt-4 border-t border-white/5 space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-rose-500/60 block">Tools & Systems (Tech Stack)</span>
+                  <p className="text-indigo-300 text-xs italic bg-white/5 p-2 rounded-lg border border-white/5">
+                    {lead.businessProfile.toolsUsed}
+                  </p>
+                  {!lead.businessProfile.toolsUsed.toLowerCase().includes("inferred") && (
+                    <span className="text-[9px] text-neutral-600 block mt-1">Note: Tech stack inferred from public signals + job postings</span>
+                  )}
                 </div>
               </div>
             ) : (
@@ -284,26 +335,60 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
               </div>
             ) : lead.contactCard ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                  <Phone size={16} className="text-neutral-500" />
-                  <span className="text-sm">{lead.contactCard.phone || "No phone found"}</span>
+                <div className="space-y-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Phone:</span>
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div className="flex flex-col max-w-[80%]">
+                        <span className="text-sm truncate">{lead.contactCard.phone || "Not found"}</span>
+                        {lead.contactCard.phoneSourceLabel && <span className="text-[8px] text-neutral-500">{lead.contactCard.phoneSourceLabel}</span>}
+                      </div>
+                      {lead.contactCard.phone && lead.contactCard.sourceUrl !== "N/A" && (
+                        <a href={lead.contactCard.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-400 hover:underline">
+                          (source)
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Email:</span>
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div className="flex flex-col max-w-[80%]">
+                        <span className="text-sm truncate">{lead.contactCard.email || "Not found"}</span>
+                        {lead.contactCard.emailSourceLabel && <span className="text-[8px] text-neutral-500">{lead.contactCard.emailSourceLabel}</span>}
+                      </div>
+                      {lead.contactCard.email && lead.contactCard.sourceUrl !== "N/A" && (
+                        <a href={lead.contactCard.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-400 hover:underline">
+                          (source)
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">WhatsApp:</span>
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div className="flex flex-col max-w-[80%]">
+                        <span className="text-sm truncate">{lead.contactCard.whatsapp || "Not found"}</span>
+                        {lead.contactCard.whatsappSourceLabel && <span className="text-[8px] text-neutral-500">{lead.contactCard.whatsappSourceLabel}</span>}
+                      </div>
+                      {lead.contactCard.whatsapp && lead.contactCard.sourceUrl !== "N/A" && (
+                        <a href={lead.contactCard.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-indigo-400 hover:underline">
+                          (source)
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                  <Mail size={16} className="text-neutral-500" />
-                  <span className="text-sm">{lead.contactCard.email || "No email found"}</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                  <MessageCircle size={16} className="text-neutral-500" />
-                  <span className="text-sm">{lead.contactCard.whatsapp || "No WhatsApp found"}</span>
-                </div>
-                <div className="pt-2">
+                <div className="pt-4 flex items-center justify-between border-t border-white/5">
                   <a 
                     href={lead.contactCard.sourceUrl} 
                     target="_blank" 
                     rel="noreferrer" 
                     className="text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
                   >
-                    View Source Link
+                    All Evidence Sources
                   </a>
                 </div>
               </div>
@@ -330,16 +415,44 @@ function CompanyCard({ lead, onProcess }: { lead: Lead; onProcess: () => void })
             {lead.status === "processing" ? (
               <Skeleton className="h-32 w-full" />
             ) : lead.outreachMessage ? (
-              <div className="relative">
-                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-4 text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap">
+              <div className="space-y-4">
+                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-4 text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap font-medium">
                   {lead.outreachMessage}
                 </div>
+                {lead.outreachReasoning && (
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/70 block mb-1">Agent Strategy (Why this works?)</span>
+                    <p className="text-[11px] text-neutral-400 italic leading-relaxed">
+                      &quot;{lead.outreachReasoning}&quot;
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-neutral-600 text-sm italic">Generating outreach message...</p>
             )}
           </div>
         </div>
+
+        {lead.logs.length > 0 && (
+          <div className="mt-8 border-t border-white/5 pt-6">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block mb-3">Multi-Agent Activity Log</span>
+            <div className="bg-black/40 rounded-xl p-3 font-mono text-[10px] text-neutral-400 h-24 overflow-y-auto space-y-1 scrollbar-hide">
+              {lead.logs.map((log, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="text-indigo-500/60 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
+                  <span>{log}</span>
+                </div>
+              ))}
+              {lead.status === "processing" && (
+                <div className="flex gap-2 animate-pulse">
+                  <span className="text-indigo-500/60 shrink-0">...</span>
+                  <span>Awaiting agent response...</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {lead.error && (
           <div className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-sm">

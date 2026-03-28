@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Lead Intelligence System 🚀
 
-## Getting Started
+A production-ready, **Multi-Agent** lead research and outreach engine built with **Next.js**, **LangGraph**, and **Gemini 2.5 Flash**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🏗 Multi-Agent Architecture
+
+This system uses a **Directed Acyclic Graph (DAG)** orchestrated by **LangGraph** to coordinate specialized AI agents. Each agent has a unique role, prompt, and input/output contract.
+
+### 🧩 Agent Definitions
+
+| Agent | Role | Tools | Output Contract |
+|-------|------|-------|-----------------|
+| **Researcher** | Deep business profiling & HQ discovery | Exa Web Search | `BusinessProfile` (Summary, Scale, Tech Stack, HQ) |
+| **Contact Finder** | Locating verified contact data | Exa Web Search | `ContactCard` (Phone, Email, WhatsApp + Source Labels) |
+| **Outreach Writer** | Personalized sales copywriting | None (Brain) | `OutreachMessage` & `Reasoning` |
+
+### 🔄 The Workflow (LangGraph)
+
+```mermaid
+graph TD
+    Start((Start)) --> Researcher[Researcher Agent]
+    Researcher --> ContactFinder[Contact Finder Agent]
+    ContactFinder --> OutreachWriter[Outreach Writer Agent]
+    OutreachWriter --> End((End/Success))
+    
+    subgraph "State Management"
+    State[(LeadState)]
+    end
+    
+    Researcher -.->|Writes Logs & Profile| State
+    ContactFinder -.->|Writes Logs & Contacts| State
+    OutreachWriter -.->|Writes Logs & Message| State
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🌟 Key Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 📡 Real-time Streaming (Visibility)
+The system uses **NDJSON streaming** to push agent updates to the UI in real-time. You can watch the agents think through the **Multi-Agent Activity Log**.
 
-## Learn More
+### 🔗 Grounded Credibility
+- **Source Links**: Every contact field is grounded with a clickable source URL.
+- **Source Labels**: Specific explanations like "Found via company website" or "Found via LinkedIn".
+- **Tech Stack Disclaimers**: Explicitly marks tech data as "Confirmed" or "Inferred" to maintain trust.
 
-To learn more about Next.js, take a look at the following resources:
+### 🛡 Failure Handling
+- **Explicit Fallbacks**: No "Loading..." dead-ends. Fields show "Not found" or "Not publicly available" if research fails.
+- **Smart HQ Recovery**: Automatically fixes "Unknown" locations by performing a pre-research HQ discovery step.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🚀 Getting Started
 
-## Deploy on Vercel
+1. **Clone & Install**:
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Environment Variables**:
+   Create a `.env` file:
+   ```env
+   GOOGLE_API_KEY=your_key
+   EXA_API_KEY=your_key
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Run**:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🛠 Tech Stack
+- **Framework**: Next.js 15 (App Router)
+- **AI Orchestration**: LangGraph / LangChain
+- **LLM**: Gemini 2.5 Flash
+- **Search**: Exa AI
+- **UI**: Tailwind CSS + Aceternity UI

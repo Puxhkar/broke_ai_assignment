@@ -15,50 +15,53 @@ const businessProfileSchema = z.object({
   sizeSignals: z.string(),
   digitalPresence: z.string(),
   toolsUsed: z.string(),
+  refinedLocation: z.string().optional(),
 });
 
 const researchAgent = createAgent({
   model: llm,
   tools: [exaSearchTool],
   systemPrompt: `You are an expert business researcher. 
-                  Your task is to conduct deep research on the given company to understand its operations, scale, and tech stack.
+Conduct deep research to extract structured data about a company.
 
-                  PRO TIPS FOR ACCURACY:
-                  1. Use category: "company" when searching for general business information and scale.
-                  2. Use type: "deep" if you need thorough research on their technical systems or specific scale signals.
-                  3. Be specific: Instead of just searching for the company name, search for "tech stack used at [Company]" or "[Company] employee count headquarters".
-
-                  Extract:
-                  1. Business Description: High-level USP and core industry.
-                  2. Size Signals: Employee count, estimated revenue, or physical scale (branches, fleet).
-                  3. Digital Presence: Main site, LinkedIn, and social links.
-                  4. Tech Stack: Software they use (CRM, booking systems, marketing automation).
-
-                  Provide a comprehensive research summary as text.`,
+CRITICAL:
+1. TECH STACK: Prefix with "Confirmed:" or "Inferred from public sources:".
+2. HQ: If location is "Unknown", find the global headquarters first.`,
 });
 
 export async function researcherNode(state: typeof LeadState.State) {
   const { companyName, location } = state;
+  
+  const initialLogs = [`[Researcher] Starting deep research for "${companyName}"...`];
+  if (location === "Unknown") {
+    initialLogs.push(`[Researcher] Location is Unknown. Prioritizing global HQ discovery.`);
+  }
 
-  const query = (location && location !== "Unknown") 
-    ? `Research company "${companyName}" in/near "${location}"` 
-    : `Find the headquarters and detailed business profile of company "${companyName}"`;
+  const query = `Research company "${companyName}" ${location !== "Unknown" ? `in ${location}` : ""}. Find summary, scale, tech stack, and HQ.`;
 
   const result = await researchAgent.invoke({
     messages: [{ role: "user", content: query }]
   });
 
   const finalAgentMessage = result.messages[result.messages.length - 1].content as string;
-
   const structuredLlm = llm.withStructuredOutput(businessProfileSchema);
 
   const finalStructured = await structuredLlm.invoke([
-    new SystemMessage("Extract the structured business profile from the research report. If scale/tech fields are thin, summarize what IS known but use 'Not found' if completely missing. Ensure 'Digital Presence' includes URLs."),
+    new SystemMessage("Extract business profile. Return HQ in 'refinedLocation' if found."),
     { role: "user", content: finalAgentMessage }
   ]);
 
+  const outputLogs = [
+    `[Researcher] Successfully extracted business profile for ${companyName}.`,
+  ];
+  if (finalStructured.refinedLocation) {
+    outputLogs.push(`[Researcher] Identified HQ: ${finalStructured.refinedLocation}`);
+  }
+
   return {
     businessProfile: finalStructured,
+    discoveredLocation: finalStructured.refinedLocation,
+    logs: [...initialLogs, ...outputLogs],
     messages: result.messages,
   };
 }

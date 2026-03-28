@@ -1,39 +1,43 @@
 import { ChatGoogle } from "@langchain/google";
 import { LeadState } from "./state";
-import { createAgent } from "langchain";
+import { z } from "zod";
 
 const llm = new ChatGoogle({
   model: "gemini-2.5-flash",
-  temperature: 0.7,
+  temperature: 0,
 });
 
-const outreachAgent = createAgent({
-  model: llm,
-  systemPrompt: `You are a top-tier sales outreach writer working for Brokai Labs.
-                  Brokai Labs builds AI systems: voice receptionists, SaaS platforms, and automation tools for SMBs.
-
-                  Draft a highly personalized, short, outcome-first outreach message (WhatsApp style, not a formal email).
-                  Use the business's profile to make it highly relevant to them. 
-                  Mention the contact's company name. DO NOT use placeholders like [Name]. If you don't know the person's name, start with a friendly greeting instead. Include a low-friction call to action.`
+const outreachSchema = z.object({
+  message: z.string().describe("The personalized outreach message."),
+  reasoning: z.string().describe("Explanation: why this message is effective for this lead?"),
 });
 
 export async function outreachWriterNode(state: typeof LeadState.State) {
   const { companyName, businessProfile, contactCard } = state;
 
-  const result = await outreachAgent.invoke({
-    messages: [{
-      role: "user",
-      content: `Company: ${companyName}
-        Profile: ${JSON.stringify(businessProfile)}
-        Contact Info Available: ${JSON.stringify(contactCard)}
+  const initialLogs = [`[OutreachWriter] Crafting personalized message for ${companyName}...`];
 
-        Generate the outreach message.`
-    }]
-  });
+  const prompt = `
+    You are a world-class sales copywriter.
+    Create a personalized outreach message for ${companyName}.
+    
+    RESEARCH:
+    - Summary: ${businessProfile.description}
+    - Scale: ${businessProfile.sizeSignals}
+    - Tech: ${businessProfile.toolsUsed}
+    
+    CONTACT:
+    - Email: ${contactCard.email}
+    
+    GOAL: Generate an outcome-first message and explain your reasoning (e.g. "Focused on their scale because...").
+  `;
+
+  const structuredLlm = llm.withStructuredOutput(outreachSchema);
+  const result = await structuredLlm.invoke(prompt);
 
   return {
-    outreachMessage: result.messages[result.messages.length - 1].content as string,
-    messages: result.messages,
+    outreachMessage: result.message,
+    outreachReasoning: result.reasoning,
+    logs: [...initialLogs, `[OutreachWriter] Message finalized with personalized reasoning.`],
   };
 }
-
